@@ -4,9 +4,9 @@
 
 #include <vector>
 
-#define SNAKE_SEGMENT_SIZE 70
-#define SCREEN_WIDTH 1960
-#define SCREEN_HEIGHT 1120
+#define SNAKE_SEGMENT_SIZE 50
+#define SCREEN_WIDTH 1000
+#define SCREEN_HEIGHT 600
 
 class snake {
   private:
