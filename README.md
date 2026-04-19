@@ -5,12 +5,13 @@ A simple and classic snake game.
 This game is straightforward. You move the snake with the arrow or WASD keys. The goal is to eat as many apples as possible.  If you eat a apple, the snake grows. The only way to lose is by hitting yourself, because the walls just teleport you to the other side of the game. If you want to exit the game, you can just press Escape and the game will close. There is no "pause" button yet but it is maybe coming in the future.
 
 ## Play the game 🎮
-If you want to try and play the game, you could download a precompiled binary for your platform by clicking the "tags" button and then the latest release. Your browser might give out a warning for "suspicious software" or someting like that, but it is safe to ignore.
+If you want to try and play the game, you could download a precompiled binary for your platform by clicking the "tags" button and then the latest release. Your browser might give out a warning, but it is safe to ignore.
 
 ### How to download a precompiled binary
 - Click the "tags" button
 - Click on the latest release
-- Download a executable for your platform
+- Download a zip file for your platform.
+- Unzip it and run the executable.
 
 ## Compile
 Like i said, you don't need to compile this, there are precompiled binaries available. But if you really want to compile it, you could run the following commands:
