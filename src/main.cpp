@@ -1,6 +1,7 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_error.h>
 #include <SDL3/SDL_oldnames.h>
+#include <SDL3/SDL_rect.h>
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3_image/SDL_image.h>
@@ -124,10 +125,16 @@ void render(SDL_Renderer *renderer, snake &theSnake) {
 
     // Render the snake
 
-    // Render the body of the snake in blue
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
-    SDL_RenderFillRects(renderer, theSnake.getBody().data() + 1,
-                        theSnake.getBody().size() - 2); // Don't render head and tail yet
+    // Render the body with the snake_body.ppm image
+    std::vector<SDL_FRect> body_rects;
+    for (int i = 1; i <= body.size() - 2; ++i) {
+        body_rects.push_back(body.data()[i]);
+    }
+    SDL_Texture *body_texture = IMG_LoadTexture(renderer, "resources/snake_body.ppm");
+    SDL_SetTextureScaleMode(body_texture, SDL_SCALEMODE_NEAREST);
+    for (int i = 0; i < body_rects.size(); ++i) {
+        SDL_RenderTexture(renderer, body_texture, NULL, &body_rects.data()[i]);
+    }
 
     // Animate the head with the snake_head.ppm image
     SDL_FRect head_rect = theSnake.getBody().front();
