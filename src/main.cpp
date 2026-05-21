@@ -19,6 +19,12 @@ void delay();
 // Keeps track of the time
 int delta = 0;
 
+int direction; // The direction the snake will be moving in
+               // 0 = up
+               // 1 = down
+               // 2 = left
+               // 3 = right
+
 int main(int argc, char *argv[]) {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -52,7 +58,7 @@ int main(int argc, char *argv[]) {
 
     SDL_Event event;
     bool running = true;
-    int direction = 2; // Start by moving left
+    direction = 2; // Start by moving left
     while (running) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
@@ -167,7 +173,28 @@ void render(SDL_Renderer *renderer, snake &theSnake) {
     }
     SDL_Texture *head_texture = IMG_LoadTexture(renderer, "resources/snake_head.ppm");
     SDL_SetTextureScaleMode(head_texture, SDL_SCALEMODE_NEAREST);
-    SDL_RenderTexture(renderer, head_texture, NULL, &head_rect);
+
+    int head_direction;
+    switch (direction) {
+        case 0:
+            head_direction = 270;
+            break;
+        case 1:
+            head_direction = 90;
+            break;
+        case 2:
+            head_direction = 180;
+            break;
+        case 3:
+            head_direction = 0;
+            break;
+        default:
+            break;
+    }
+
+    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2, (float)SNAKE_SEGMENT_SIZE / 2};
+    SDL_RenderTextureRotated(renderer, head_texture, NULL, &head_rect, head_direction, &center,
+                             SDL_FLIP_NONE);
 
     // The tail of the snake is animated with the snake_tail.ppm image
     SDL_FRect tail_rect = theSnake.getBody().back();
