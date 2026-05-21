@@ -132,28 +132,36 @@ void render(SDL_Renderer *renderer, snake &theSnake) {
     // Render the snake
 
     // Animate the body with the snake_body.ppm image
+    std::vector<int> body_directions;
     std::vector<SDL_FRect> body_rects;
     for (int i = 1; i <= body.size() - 2; ++i) {
         SDL_FRect body_rect = body.data()[i];
         if (body[i - 1].y == body_rect.y) {
             if (body[i - 1].x < body_rect.x) {
                 body_rect.x -= anim_tail;
+                body_directions.push_back(180);
             } else {
                 body_rect.x += anim_tail;
+                body_directions.push_back(0);
             }
         } else {
             if (body[i - 1].y < body_rect.y) {
                 body_rect.y -= anim_tail;
+                body_directions.push_back(270);
             } else {
                 body_rect.y += anim_tail;
+                body_directions.push_back(90);
             }
         }
         body_rects.push_back(body_rect);
     }
     SDL_Texture *body_texture = IMG_LoadTexture(renderer, "resources/snake_body.ppm");
     SDL_SetTextureScaleMode(body_texture, SDL_SCALEMODE_NEAREST);
+
+    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2, (float)SNAKE_SEGMENT_SIZE / 2};
     for (int i = 0; i < body_rects.size(); ++i) {
-        SDL_RenderTexture(renderer, body_texture, NULL, &body_rects.data()[i]);
+        SDL_RenderTextureRotated(renderer, body_texture, NULL, &body_rects.data()[i],
+                                 body_directions[i], &center, SDL_FLIP_NONE);
     }
 
     // Animate the head with the snake_head.ppm image
@@ -192,7 +200,6 @@ void render(SDL_Renderer *renderer, snake &theSnake) {
             break;
     }
 
-    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2, (float)SNAKE_SEGMENT_SIZE / 2};
     SDL_RenderTextureRotated(renderer, head_texture, NULL, &head_rect, head_direction, &center,
                              SDL_FLIP_NONE);
 
