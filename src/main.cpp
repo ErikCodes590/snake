@@ -9,8 +9,8 @@
 #include <iostream>
 #include "snake.hpp"
 
-#define SPEED_OF_GAME 1000 // Delay in milliseconds between each game update (lower is faster)
-#define REFRESH_RATE 60    // Target refresh rate for rendering (frames per second)
+#define SPEED_OF_GAME 300 // Delay in milliseconds between each game update (lower is faster)
+#define REFRESH_RATE 60   // Target refresh rate for rendering (frames per second)
 
 void render(SDL_Renderer *renderer, snake &theSnake);
 

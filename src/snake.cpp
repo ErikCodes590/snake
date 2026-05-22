@@ -1,4 +1,5 @@
 #include "snake.hpp"
+#include <SDL3/SDL_rect.h>
 
 #include <cstdlib>
 #include <ctime>
@@ -59,7 +60,22 @@ void snake::move(int direction) {
 
 void snake::grow() {
     // Add a new segment to the end of the snake
-    body.push_back(body.back());
+    SDL_FRect rect = body.back();
+    SDL_FRect rect2 = body.data()[body.size() - 2];
+    if (rect.y == rect2.y) {
+        if (rect.x < rect2.x)
+            rect.x -= SNAKE_SEGMENT_SIZE;
+        else {
+            rect.x += SNAKE_SEGMENT_SIZE;
+        }
+    } else {
+        if (rect.y < rect2.y)
+            rect.y -= SNAKE_SEGMENT_SIZE;
+        else {
+            rect.y += SNAKE_SEGMENT_SIZE;
+        }
+    }
+    body.push_back(rect);
 }
 
 std::vector<SDL_FRect> snake::getBody() { return body; }
