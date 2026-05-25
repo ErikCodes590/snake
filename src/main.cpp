@@ -6,17 +6,16 @@
 #include <SDL3/SDL_surface.h>
 #include <SDL3_image/SDL_image.h>
 #include <cstdio>
-#include <iostream>
 #include "snake.hpp"
 
 #define SPEED_OF_GAME 300 // Delay in milliseconds between each game update (lower is faster)
 #define REFRESH_RATE 60   // Target refresh rate for rendering (frames per second)
 
-void init(); // Inits SDL3
+static void init(); // Inits SDL3
 
-void render(SDL_Renderer *renderer, snake &theSnake);
+static void render();
 
-void delay();
+static void delay();
 
 // Keeps track of the time
 int delta = 0;
@@ -26,6 +25,8 @@ int direction; // The direction the snake will be moving in
                // 1 = down
                // 2 = left
                // 3 = right
+
+int prev_nextlast_tail_direction;
 
 int score = 0; // How many apples the snake has eaten
 
@@ -40,10 +41,10 @@ int main(int argc, char *argv[]) {
     {
         SDL_Event event;
         bool running = true;
-        direction = 2;       // Start by moving left
-        int typed_direction; // Which direction has been typed by the user.
-                             // The actual direction will be set to the typed_direction after each
-                             // game update.
+        direction = 2;           // Start by moving left
+        int typed_direction = 2; // Which direction has been typed by the user. (default is 2)
+                                 // The actual direction will be set to the typed_direction after
+                                 // each game update.
 
         while (running) {
             while (SDL_PollEvent(&event)) {
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
             // Same but down
             if ((keyboardState[SDL_SCANCODE_DOWN] || keyboardState[SDL_SCANCODE_S]) &&
                 direction != 0)
-                typed_direction = 0;
+                typed_direction = 1;
 
             if ((keyboardState[SDL_SCANCODE_LEFT] || keyboardState[SDL_SCANCODE_A]) &&
                 direction != 3)
@@ -93,7 +94,7 @@ int main(int argc, char *argv[]) {
                 }
             }
 
-            render(renderer, theSnake);
+            render();
 
             delay();
         }
@@ -104,7 +105,7 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void init() {
+static void init() {
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         fprintf(stderr, "SDL_Init Error: %s", SDL_GetError());
     }
@@ -141,8 +142,8 @@ static void render() {
         fprintf(stderr, "Failed: %s", SDL_GetError());
 
     // These help to animate the snake
-    float anim = ((float)delta / SPEED_OF_GAME) * SNAKE_SEGMENT_SIZE;
-    float anim_head = anim - SNAKE_SEGMENT_SIZE;
+    float anim = (((float)delta / SPEED_OF_GAME) * SNAKE_SEGMENT_SIZE) - SNAKE_SEGMENT_SIZE;
+    float anim_body = anim + SNAKE_SEGMENT_SIZE;
 
     SDL_FRect temp;
     std::vector<SDL_FRect> body = theSnake.getBody();
@@ -159,25 +160,25 @@ static void render() {
          ++i) { // Loop through every segment exept the head and the tail of the snake
 
         SDL_FRect body_segment_rect = body.data()[i]; // The body segment
-        if (body[i - 1].y == body_segment_rect.y) {   // The body segment is pointing is either 0 or
+        if (body[i + 1].y == body_segment_rect.y) {   // The body segment is pointing is either 0 or
                                                       // 180 degrees because y cooirdinates match
-            if (body[i - 1].x < body_segment_rect.x) {
-                body_segment_rect.x -= anim;
-                body_directions.push_back(180);
-            } else {
+            if (body[i + 1].x < body_segment_rect.x) {
                 body_segment_rect.x += anim;
                 body_directions.push_back(0);
+            } else {
+                body_segment_rect.x -= anim;
+                body_directions.push_back(180);
             }
         }
 
         else {
-            if (body[i - 1].y < body_segment_rect.y) { // The body segment is pointing is either 270
+            if (body[i + 1].y < body_segment_rect.y) { // The body segment is pointing is either 270
                                                        // or 90 degrees because x cooirdinates match
-                body_segment_rect.y -= anim;
-                body_directions.push_back(270);
-            } else {
                 body_segment_rect.y += anim;
                 body_directions.push_back(90);
+            } else {
+                body_segment_rect.y -= anim;
+                body_directions.push_back(270);
             }
         }
         body_rects.push_back(body_segment_rect);
@@ -185,7 +186,8 @@ static void render() {
     SDL_Texture *body_texture = IMG_LoadTexture(renderer, "resources/snake_body.ppm");
     SDL_SetTextureScaleMode(body_texture, SDL_SCALEMODE_NEAREST);
 
-    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2, (float)SNAKE_SEGMENT_SIZE / 2};
+    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2,
+                         (float)SNAKE_SEGMENT_SIZE / 2}; // The texture rotates around its center
     for (int i = 0; i < body_rects.size(); ++i) {
         SDL_RenderTextureRotated(renderer, body_texture, NULL, &body_rects.data()[i],
                                  body_directions[i], &center, SDL_FLIP_NONE);
@@ -195,15 +197,15 @@ static void render() {
     SDL_FRect head_rect = theSnake.getBody().front();
     if (body[1].y == head_rect.y) {
         if (body[1].x < head_rect.x) {
-            head_rect.x += anim_head;
+            head_rect.x += anim;
         } else {
-            head_rect.x -= anim_head;
+            head_rect.x -= anim;
         }
     } else {
         if (body[1].y < head_rect.y) {
-            head_rect.y += anim_head;
+            head_rect.y += anim;
         } else {
-            head_rect.y -= anim_head;
+            head_rect.y -= anim;
         }
     }
     SDL_Texture *head_texture = IMG_LoadTexture(renderer, "resources/snake_head.ppm");
@@ -233,8 +235,8 @@ static void render() {
     // The tail of the snake is animated with the snake_tail.ppm image
     int tail_direction;
     SDL_FRect tail_rect = theSnake.getBody().back();
-    if (theSnake.getBody()[theSnake.getBody().size() - 2].y == tail_rect.y) {
-        if (theSnake.getBody()[theSnake.getBody().size() - 2].x < tail_rect.x) {
+    if (prev_nextlast_tail_direction == 180 || prev_nextlast_tail_direction == 0) {
+        if (prev_nextlast_tail_direction == 180) {
             tail_rect.x -= anim;
             tail_direction = 180;
         } else {
@@ -242,7 +244,7 @@ static void render() {
             tail_direction = 0;
         }
     } else {
-        if (theSnake.getBody()[theSnake.getBody().size() - 2].y < tail_rect.y) {
+        if (prev_nextlast_tail_direction == 270) {
             tail_rect.y -= anim;
             tail_direction = 270;
         } else {
@@ -256,10 +258,12 @@ static void render() {
     SDL_RenderTextureRotated(renderer, tail_texture, NULL, &tail_rect, tail_direction, &center,
                              SDL_FLIP_NONE);
 
+    prev_nextlast_tail_direction = body_directions.back();
+
     SDL_RenderPresent(renderer);
 }
 
-void delay() {
+static void delay() {
     static Uint32 lastUpdate = 0;
     static Uint32 lastRender = 0;
     Uint32 currentTime = SDL_GetTicks();
