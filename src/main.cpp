@@ -10,6 +10,7 @@
 
 #define SPEED_OF_GAME 300 // Delay in milliseconds between each game update (lower is faster)
 #define REFRESH_RATE 60   // Target refresh rate for rendering (frames per second)
+#define SNAKE_INITIAL_LENGTH 3
 
 static void init(); // Inits SDL3
 
@@ -26,15 +27,13 @@ int direction; // The direction the snake will be moving in
                // 2 = left
                // 3 = right
 
-int prev_nextlast_tail_direction;
-
 int score = 0; // How many apples the snake has eaten
 
 SDL_Window *window;
 SDL_Renderer *renderer;
 
-struct snake theSnake(5);
-
+struct snake theSnake(SNAKE_INITIAL_LENGTH +
+                      1); // One segment is added because the extended tail is added
 int main(int argc, char *argv[]) {
     init();
 
@@ -156,8 +155,8 @@ static void render() {
     std::vector<SDL_FRect>
         body_rects; // Vector that contains all the snake_body-segments' positions (after animated)
 
-    for (int i = 1; i <= body.size() - 2;
-         ++i) { // Loop through every segment exept the head and the tail of the snake
+    for (int i = 1; i <= body.size() - 3;
+         ++i) { // Loop through every segment exept the head, the tail, and the extended tail
 
         SDL_FRect body_segment_rect = body.data()[i]; // The body segment
         if (body[i + 1].y == body_segment_rect.y) {   // The body segment is pointing is either 0 or
@@ -234,9 +233,10 @@ static void render() {
 
     // The tail of the snake is animated with the snake_tail.ppm image
     int tail_direction;
-    SDL_FRect tail_rect = theSnake.getBody().back();
-    if (prev_nextlast_tail_direction == 180 || prev_nextlast_tail_direction == 0) {
-        if (prev_nextlast_tail_direction == 180) {
+    SDL_FRect tail_rect = theSnake.getBody()[theSnake.getBody().size() - 2];
+    SDL_FRect extended_tail_rect = theSnake.getBody().back();
+    if (extended_tail_rect.y == tail_rect.y) {
+        if (extended_tail_rect.x > tail_rect.x) {
             tail_rect.x -= anim;
             tail_direction = 180;
         } else {
@@ -244,7 +244,7 @@ static void render() {
             tail_direction = 0;
         }
     } else {
-        if (prev_nextlast_tail_direction == 270) {
+        if (extended_tail_rect.y > tail_rect.y) {
             tail_rect.y -= anim;
             tail_direction = 270;
         } else {
@@ -257,8 +257,6 @@ static void render() {
 
     SDL_RenderTextureRotated(renderer, tail_texture, NULL, &tail_rect, tail_direction, &center,
                              SDL_FLIP_NONE);
-
-    prev_nextlast_tail_direction = body_directions.back();
 
     SDL_RenderPresent(renderer);
 }

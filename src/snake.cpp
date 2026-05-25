@@ -82,7 +82,7 @@ std::vector<SDL_FRect> snake::getBody() { return body; }
 
 bool snake::dead() {
     // Check if the head of the snake collides with any other segment
-    for (size_t i = 1; i < body.size(); ++i) {
+    for (size_t i = 1; i < body.size() - 1; ++i) {
         if (body[0].x == body[i].x && body[0].y == body[i].y) {
             return true;
         }
@@ -103,7 +103,8 @@ void snake::newApple() {
     apple.h = SNAKE_SEGMENT_SIZE;
 
     // Check if the new apple collides with the snake's body
-    for (const auto &segment : body) {
+    for (int i = 0; i < body.size() - 1; ++i) {
+        SDL_FRect segment = body[i];
         if (apple.x == segment.x && apple.y == segment.y) {
             newApple(); // Apple is on the snake, generate a new one
         }
