@@ -3,15 +3,14 @@
 
 #include <cstdlib>
 #include <ctime>
-#include <random>
 
 snake::snake(int initialLength) {
     srand(time(NULL));
 
     // Make the head of the snake
-    body.push_back({SCREEN_WIDTH / 2 / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE,
-                    SCREEN_HEIGHT / 2 / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE, SNAKE_SEGMENT_SIZE,
-                    SNAKE_SEGMENT_SIZE});
+    body.push_back({(int)(SCREEN_WIDTH / 2 / SNAKE_SEGMENT_SIZE) * SNAKE_SEGMENT_SIZE,
+                    (int)(SCREEN_HEIGHT / 2 / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE),
+                    SNAKE_SEGMENT_SIZE, SNAKE_SEGMENT_SIZE});
 
     // Grow the snake to the preferred length
     for (int i = 1; i < initialLength; ++i) {
@@ -29,7 +28,7 @@ void snake::move(int direction) {
         body[i] = body[i - 1];
     }
 
-    // Move the head of the snake in the wanted direction
+    // Move the head of the snake in the right direction
     switch (direction) {
         case 0: // Up
             body[0].y -= SNAKE_SEGMENT_SIZE;
@@ -45,16 +44,16 @@ void snake::move(int direction) {
             break;
     }
 
-    // This loops the snake thru the screen
+    // This loops the snake through the screen
     if (body[0].x < 0) {
-        body[0].x += SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE;
+        body[0].x += (int)(SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
     } else if (body[0].x >= SCREEN_WIDTH) {
-        body[0].x -= SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE;
+        body[0].x -= (int)(SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
     }
     if (body[0].y < 0) {
-        body[0].y += SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE;
+        body[0].y += (int)(SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
     } else if (body[0].y >= SCREEN_HEIGHT) {
-        body[0].y -= SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE;
+        body[0].y -= (int)(SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
     }
 }
 
