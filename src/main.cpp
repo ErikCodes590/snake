@@ -5,6 +5,7 @@
 #include <SDL3/SDL_render.h>
 #include <SDL3/SDL_surface.h>
 #include <SDL3_image/SDL_image.h>
+#include <cstdint>
 #include <cstdio>
 #include "snake.hpp"
 
@@ -29,6 +30,10 @@ int direction; // The direction the snake will be moving in
 
 int score = 0; // How many apples the snake has eaten
 
+int FPS;
+
+const uint32_t targetFrameTime = 1000 / REFRESH_RATE;
+
 SDL_Window *window;
 SDL_Renderer *renderer;
 
@@ -46,13 +51,13 @@ int main(int argc, char *argv[]) {
                                  // each game update.
 
         while (running) {
+            const bool *keyboardState = SDL_GetKeyboardState(NULL);
+
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_EVENT_QUIT) {
                     running = false;
                 }
             }
-
-            const bool *keyboardState = SDL_GetKeyboardState(NULL);
 
             // Move upwards if not going down
             if ((keyboardState[SDL_SCANCODE_UP] || keyboardState[SDL_SCANCODE_W]) && direction != 1)
@@ -76,7 +81,7 @@ int main(int argc, char *argv[]) {
                 running = false;
             }
 
-            // Delta is 0 if it's time to update the game
+            // Delta is 0 if it's time to update the snake
             if (delta == 0) {
                 direction = typed_direction;
                 theSnake.move(direction);
@@ -261,19 +266,41 @@ static void render() {
     SDL_RenderPresent(renderer);
 }
 
-static void delay() {
-    static Uint32 lastUpdate = 0;
-    static Uint32 lastRender = 0;
-    Uint32 currentTime = SDL_GetTicks();
+static void delay(void) {
+    static uint32_t lastRender = 0;
+    static uint32_t lastSnakeUpdate = 0;
+    static uint32_t lastFPSUpdate = 0;
+    static uint32_t frameCount = 0;
 
-    if (currentTime - lastUpdate < 1000 / REFRESH_RATE) {
-        SDL_Delay(1000 / REFRESH_RATE - (currentTime - lastUpdate));
+    uint32_t frameStart = SDL_GetTicks();
+
+    // Frame limiting
+    uint32_t frameTime = frameStart - lastRender;
+
+    if (frameTime < targetFrameTime) {
+        SDL_Delay(targetFrameTime - frameTime);
     }
-    delta = currentTime - lastRender;
 
+    // Get updated time after delay
+    uint32_t currentTime = SDL_GetTicks();
+
+    // Delta time
+    delta = currentTime - lastSnakeUpdate;
     if (delta >= SPEED_OF_GAME) {
-        lastRender = currentTime;
         delta = 0;
+        lastSnakeUpdate = currentTime;
     }
-    lastUpdate = SDL_GetTicks();
+
+    lastRender = currentTime;
+
+    // FPS counter (update once per second)
+    frameCount++;
+
+    if (currentTime - lastFPSUpdate >= 1000) {
+        FPS = frameCount;
+        printf("FPS: %u\n", FPS);
+
+        frameCount = 0;
+        lastFPSUpdate = currentTime;
+    }
 }
