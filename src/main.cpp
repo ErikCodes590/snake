@@ -19,6 +19,11 @@ static void render();
 
 static void delay();
 
+static void
+loop_coordinates(float *x,
+                 float *y); // This keeps the snake in frame, even though its cooirdinates
+                            // are outside of the screen (the snake loops in the walls)
+
 // Keeps track of the time
 int delta = 0;
 
@@ -206,6 +211,7 @@ static void render() {
             body_rects.push_back(body_segment_rect);
         }
         for (int i = 0; i < body_rects.size(); ++i) {
+            loop_coordinates(&body_rects[i].x, &body_rects[i].y);
             SDL_RenderTextureRotated(renderer, body_texture, NULL, &body_rects.data()[i],
                                      body_directions[i], &center, SDL_FLIP_NONE);
         }
@@ -232,6 +238,7 @@ static void render() {
             }
         }
 
+        loop_coordinates(&head_rect.x, &head_rect.y);
         SDL_RenderTextureRotated(renderer, head_texture, NULL, &head_rect, head_direction, &center,
                                  SDL_FLIP_NONE);
     }
@@ -257,6 +264,8 @@ static void render() {
                 tail_direction = 90;
             }
         }
+
+        loop_coordinates(&tail_rect.x, &tail_rect.y);
         SDL_RenderTextureRotated(renderer, tail_texture, NULL, &tail_rect, tail_direction, &center,
                                  SDL_FLIP_NONE);
     }
@@ -300,5 +309,20 @@ static void delay(void) {
 
         frameCount = 0;
         lastFPSUpdate = currentTime;
+    }
+}
+
+static void loop_coordinates(float *x, float *y) {
+    while (*x < 0 || *x >= SCREEN_WIDTH || *y < 0 || *y >= SCREEN_HEIGHT) {
+        if (*x < 0) {
+            *x += (int)(SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
+        } else if (*x >= SCREEN_WIDTH) {
+            *x -= (int)(SCREEN_WIDTH / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
+        }
+        if (*y < 0) {
+            *y += (int)(SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
+        } else if (*y >= SCREEN_HEIGHT) {
+            *y -= (int)(SCREEN_HEIGHT / SNAKE_SEGMENT_SIZE * SNAKE_SEGMENT_SIZE);
+        }
     }
 }
