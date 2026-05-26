@@ -40,6 +40,7 @@ SDL_Renderer *renderer;
 SDL_Texture *apple_texture;
 SDL_Texture *body_texture;
 SDL_Texture *head_texture;
+SDL_Texture *tail_texture;
 
 struct snake theSnake(SNAKE_INITIAL_LENGTH +
                       1); // One segment is added because the extended tail is added
@@ -144,129 +145,121 @@ static void init() {
 
     head_texture = IMG_LoadTexture(renderer, "resources/snake_head.ppm");
     SDL_SetTextureScaleMode(head_texture, SDL_SCALEMODE_NEAREST);
+
+    tail_texture = IMG_LoadTexture(renderer, "resources/snake_tail.ppm");
+    SDL_SetTextureScaleMode(tail_texture, SDL_SCALEMODE_NEAREST);
 }
 
 static void render() {
+    // How much the segments will be "push backed" by
+    float anim = (((float)delta / SPEED_OF_GAME) * SNAKE_SEGMENT_SIZE) - SNAKE_SEGMENT_SIZE;
+
+    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2,
+                         (float)SNAKE_SEGMENT_SIZE / 2}; // All segments rotate around its center
+
     // Clear the screen
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
-    // Render the apple with the apple.ppm image
-    SDL_FRect *apple_rect = theSnake.getApple();
-    SDL_RenderTexture(renderer, apple_texture, NULL, apple_rect);
-    if (!apple_texture)
-        fprintf(stderr, "Failed: %s", SDL_GetError());
+    {
+        // Render the apple with the apple.ppm image
+        SDL_FRect *apple_rect = theSnake.getApple();
+        SDL_RenderTexture(renderer, apple_texture, NULL, apple_rect);
+        if (!apple_texture)
+            fprintf(stderr, "Failed: %s", SDL_GetError());
+    }
+    {
+        // Animate the body
+        std::vector<SDL_FRect> body = theSnake.getBody();
+        std::vector<int>
+            body_directions; // Vector that contains all the snake_body-segments' directions
+        std::vector<SDL_FRect> body_rects; // Vector that contains all the snake_body-segments'
+                                           // cooirdinates (after animated)
 
-    // These help to animate the snake
-    float anim = (((float)delta / SPEED_OF_GAME) * SNAKE_SEGMENT_SIZE) - SNAKE_SEGMENT_SIZE;
+        for (int i = 1; i <= body.size() - 3;
+             ++i) { // Loop through every segment exept the head, the tail, and the extended tail
 
-    std::vector<SDL_FRect> body = theSnake.getBody();
+            SDL_FRect body_segment_rect = body.data()[i]; // The body segment
+            if (body[i + 1].y ==
+                body_segment_rect.y) { // The body segment is pointing is either 0 or
+                                       // 180 degrees because y cooirdinates match
+                if (body[i + 1].x < body_segment_rect.x) {
+                    body_segment_rect.x += anim;
+                    body_directions.push_back(0);
+                } else {
+                    body_segment_rect.x -= anim;
+                    body_directions.push_back(180);
+                }
+            }
 
-    // Render the snake
-
-    // Animate the body with the snake_body.ppm image
-    std::vector<int>
-        body_directions; // Vector that contains all the snake_body-segments' directions
-    std::vector<SDL_FRect>
-        body_rects; // Vector that contains all the snake_body-segments' positions (after animated)
-
-    for (int i = 1; i <= body.size() - 3;
-         ++i) { // Loop through every segment exept the head, the tail, and the extended tail
-
-        SDL_FRect body_segment_rect = body.data()[i]; // The body segment
-        if (body[i + 1].y == body_segment_rect.y) {   // The body segment is pointing is either 0 or
-                                                      // 180 degrees because y cooirdinates match
-            if (body[i + 1].x < body_segment_rect.x) {
-                body_segment_rect.x += anim;
-                body_directions.push_back(0);
+            else {
+                if (body[i + 1].y <
+                    body_segment_rect.y) { // The body segment is pointing is either 270
+                                           // or 90 degrees because x cooirdinates match
+                    body_segment_rect.y += anim;
+                    body_directions.push_back(90);
+                } else {
+                    body_segment_rect.y -= anim;
+                    body_directions.push_back(270);
+                }
+            }
+            body_rects.push_back(body_segment_rect);
+        }
+        for (int i = 0; i < body_rects.size(); ++i) {
+            SDL_RenderTextureRotated(renderer, body_texture, NULL, &body_rects.data()[i],
+                                     body_directions[i], &center, SDL_FLIP_NONE);
+        }
+    }
+    {
+        // Animate the head
+        SDL_FRect head_rect = theSnake.getBody().front();
+        int head_direction;
+        if (direction > 1) {
+            if (direction == 3) {
+                head_rect.x += anim;
+                head_direction = 0;
             } else {
-                body_segment_rect.x -= anim;
-                body_directions.push_back(180);
+                head_rect.x -= anim;
+                head_direction = 180;
+            }
+        } else {
+            if (direction == 1) {
+                head_rect.y += anim;
+                head_direction = 90;
+            } else {
+                head_rect.y -= anim;
+                head_direction = 270;
             }
         }
 
-        else {
-            if (body[i + 1].y < body_segment_rect.y) { // The body segment is pointing is either 270
-                                                       // or 90 degrees because x cooirdinates match
-                body_segment_rect.y += anim;
-                body_directions.push_back(90);
+        SDL_RenderTextureRotated(renderer, head_texture, NULL, &head_rect, head_direction, &center,
+                                 SDL_FLIP_NONE);
+    }
+    {
+        // Animate the tail
+        int tail_direction;
+        SDL_FRect tail_rect = theSnake.getBody()[theSnake.getBody().size() - 2];
+        SDL_FRect extended_tail_rect = theSnake.getBody().back();
+        if (extended_tail_rect.y == tail_rect.y) {
+            if (extended_tail_rect.x > tail_rect.x) {
+                tail_rect.x -= anim;
+                tail_direction = 180;
             } else {
-                body_segment_rect.y -= anim;
-                body_directions.push_back(270);
+                tail_rect.x += anim;
+                tail_direction = 0;
+            }
+        } else {
+            if (extended_tail_rect.y > tail_rect.y) {
+                tail_rect.y -= anim;
+                tail_direction = 270;
+            } else {
+                tail_rect.y += anim;
+                tail_direction = 90;
             }
         }
-        body_rects.push_back(body_segment_rect);
+        SDL_RenderTextureRotated(renderer, tail_texture, NULL, &tail_rect, tail_direction, &center,
+                                 SDL_FLIP_NONE);
     }
-    SDL_FPoint center = {(float)SNAKE_SEGMENT_SIZE / 2,
-                         (float)SNAKE_SEGMENT_SIZE / 2}; // The texture rotates around its center
-    for (int i = 0; i < body_rects.size(); ++i) {
-        SDL_RenderTextureRotated(renderer, body_texture, NULL, &body_rects.data()[i],
-                                 body_directions[i], &center, SDL_FLIP_NONE);
-    }
-
-    // Animate the head with the snake_head.ppm image
-    SDL_FRect head_rect = theSnake.getBody().front();
-    if (body[1].y == head_rect.y) {
-        if (body[1].x < head_rect.x) {
-            head_rect.x += anim;
-        } else {
-            head_rect.x -= anim;
-        }
-    } else {
-        if (body[1].y < head_rect.y) {
-            head_rect.y += anim;
-        } else {
-            head_rect.y -= anim;
-        }
-    }
-
-    int head_direction;
-    switch (direction) {
-        case 0:
-            head_direction = 270;
-            break;
-        case 1:
-            head_direction = 90;
-            break;
-        case 2:
-            head_direction = 180;
-            break;
-        case 3:
-            head_direction = 0;
-            break;
-        default:
-            break;
-    }
-
-    SDL_RenderTextureRotated(renderer, head_texture, NULL, &head_rect, head_direction, &center,
-                             SDL_FLIP_NONE);
-
-    // The tail of the snake is animated with the snake_tail.ppm image
-    int tail_direction;
-    SDL_FRect tail_rect = theSnake.getBody()[theSnake.getBody().size() - 2];
-    SDL_FRect extended_tail_rect = theSnake.getBody().back();
-    if (extended_tail_rect.y == tail_rect.y) {
-        if (extended_tail_rect.x > tail_rect.x) {
-            tail_rect.x -= anim;
-            tail_direction = 180;
-        } else {
-            tail_rect.x += anim;
-            tail_direction = 0;
-        }
-    } else {
-        if (extended_tail_rect.y > tail_rect.y) {
-            tail_rect.y -= anim;
-            tail_direction = 270;
-        } else {
-            tail_rect.y += anim;
-            tail_direction = 90;
-        }
-    }
-    SDL_Texture *tail_texture = IMG_LoadTexture(renderer, "resources/snake_tail.ppm");
-    SDL_SetTextureScaleMode(tail_texture, SDL_SCALEMODE_NEAREST);
-
-    SDL_RenderTextureRotated(renderer, tail_texture, NULL, &tail_rect, tail_direction, &center,
-                             SDL_FLIP_NONE);
 
     SDL_RenderPresent(renderer);
 }
