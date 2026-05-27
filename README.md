@@ -15,10 +15,14 @@ If you want to play the game, you can download it for your platform by clicking 
 - Run the executable
 
 ## Pixelart
-This game uses bery basic pixelart i made in 10 minutes. If you want to improve it or make your own, you are free to do so. If you have made very good pixelart, please tell me by creating a issue, and i might add it to the game!👍
+As you can see, this game uses bery basic pixelart i made in 10 minutes. If you want to improve it or make your own, you are free to do so. If you have made any good pixelart, please tell me by creating a issue, and i might add it to the game!👍
+
+### Current pixelart
+![snake_tail](resources/PNG/tail600.png)![snake_body](resources/PNG/body600.png)![snake_head](resources/PNG/head600.png)
+![apple](resources/PNG/apple600.png)
 
 ## Suggestions for improvement
-If you have any ideas to make this better, create a issue and tell me.
+If you have any ideas to make this game better, create a issue and tell me.
 Also, if you find any bugs, please report them by creating a issue.
 
 ## Let me know what you think 👍
